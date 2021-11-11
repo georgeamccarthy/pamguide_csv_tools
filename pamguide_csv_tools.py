@@ -53,7 +53,8 @@ def remove_nans(df):
     return df[~(m | m.shift(fill_value=False) | m.shift(-1, fill_value=False) | m.shift(-2, fill_value=False))]
 
     # Equivalent but slower.
-    '''
+
+def remove_nans_old(df):
     #identify all the rows in dataframe where there are nan (infinite values)
     rows = df.index[np.isnan(df).any(1)]     
 
@@ -89,7 +90,6 @@ def remove_nans(df):
     #remove nan values 
     df.dropna(inplace=True)
     return df
-    '''
 
 def inf_to_nans(df):
     return df.replace([np.inf, -np.inf], np.nan)
