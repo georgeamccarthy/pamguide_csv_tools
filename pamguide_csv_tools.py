@@ -7,6 +7,11 @@ import config
 processed_folder_path = './processed'
 
 def process_csvs(csv_folder_path):
+    print('Enter output file name (without file ending)')
+    processed_file_name = input('>>> ')
+    if processed_file_name == '':
+        processed_file_name = 'processed'
+
     df = combine_csvs()
     print('CSVs combined')
     df = df.drop('1213', axis=1)
@@ -15,16 +20,10 @@ def process_csvs(csv_folder_path):
     df = remove_nans(df)
     print('Corrupt nan sections removed.')
 
-    print(f'Processed dave saved as binary feather file {processed_folder_path}')
-
-    print('Enter output file name (without file ending)')
-
-    processed_file_name = input('>>> ')
-    if processed_file_name == '':
-        processed_file_name = 'processed'
-
     df.reset_index().to_feather(f'{processed_folder_path}/{processed_file_name}.feather')
     print(df)
+
+    print(f'Processed dave saved as binary feather file {processed_folder_path}')
 
 def combine_csvs():
     csv_paths = []
