@@ -10,7 +10,7 @@ PAMGuide CSV Tools converts `.csv` files outputted by PAMGuide into a processed 
 
 ✅ Timestamps data.
 
-✅ Converts csv to dataframe.
+✅ Converts csv to DataFrame.
 
 ✅ Feather binary file is fast and lightweight.
 
@@ -38,14 +38,14 @@ Where `csv_folder_path` should be set to where you are storing your CSVs.
 
 ## How to use feather files
 
-### Load feather into Pandas dataframe
+### Load feather into Pandas DataFrame
 ```python
 import pandas as pd
 
 df = pd.read_feather(path='mydata.feather')
 ```
 
-### Save dataframe to feather file
+### Save Pandas DataFrame to feather file
 
 This creates `df_as_feather.feather` in the local directory.
 
