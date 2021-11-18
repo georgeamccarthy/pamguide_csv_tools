@@ -6,7 +6,7 @@ import config
 
 processed_folder_path = './processed'
 
-def process_csv(csv_folder_path):
+def process_csvs(csv_folder_path):
     df = combine_csvs()
     print('CSVs combined')
     df = df.drop('1213', axis=1)
@@ -124,4 +124,4 @@ if __name__ == '__main__':
         csv_folder_path = config.csv_folder_path
         print(f'.csv folder path loaded from config.py ({csv_folder_path})')
 
-    process_csv(csv_folder_path)
+    process_csvs(csv_folder_path)
