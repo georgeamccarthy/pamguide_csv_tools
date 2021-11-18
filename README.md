@@ -35,3 +35,20 @@ process_csvs(csv_folder_path='/data/pamgguide_csv_folder')
 ```
 
 Where `csv_folder_path` should be set to where you are storing your CSVs.
+
+## How to use feather files
+
+### Load feather into Pandas dataframe
+```python
+import pandas as pd
+
+df = pd.read_feather(path='mydata.feather')
+```
+
+### Save dataframe to feather file
+
+This creates `df_as_feather.feather` in the local directory.
+
+```python
+df.reset_index().to_feather(path='mydata.feather')
+```
