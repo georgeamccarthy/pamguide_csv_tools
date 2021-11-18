@@ -1,8 +1,30 @@
 import pandas as pd
 import os
-from config import csv_folder_path, processed_path
 import datetime
 import numpy as np
+import config
+
+processed_folder_path = './processed'
+
+def process_csv(csv_folder_path):
+    df = combine_csvs()
+    print('CSVs combined')
+    df = df.drop('1213', axis=1)
+    print('PAMGuide false time column dropped')
+    df = inf_to_nans(df)
+    df = remove_nans(df)
+    print('Corrupt nan sections removed.')
+
+    print(f'Processed dave saved as binary feather file {processed_folder_path}')
+
+    print('Enter output file name (without file ending)')
+
+    processed_file_name = input('>>> ')
+    if processed_file_name == '':
+        processed_file_name = 'processed'
+
+    df.reset_index().to_feather(f'{processed_folder_path}/{processed_file_name}.feather')
+    print(df)
 
 def combine_csvs():
     csv_paths = []
@@ -38,8 +60,8 @@ def combine_csvs():
 
     concatenated_df['timestamp'] = timestamps
 
-    if not os.path.exists(processed_path):
-        os.makedirs(processed_path)
+    if not os.path.exists(processed_folder_path):
+        os.makedirs(processed_folder_path)
 
     return concatenated_df
 
@@ -93,3 +115,13 @@ def remove_nans_old(df):
 
 def inf_to_nans(df):
     return df.replace([np.inf, -np.inf], np.nan)
+
+if __name__ == '__main__':
+    if config.csv_folder_path == '':
+        print('Enter folder containing .csv files to process')
+        csv_folder_path = input('>>> ')
+    else:
+        csv_folder_path = config.csv_folder_path
+        print(f'.csv folder path loaded from config.py ({csv_folder_path})')
+
+    process_csv(csv_folder_path)
