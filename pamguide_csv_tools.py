@@ -6,12 +6,7 @@ import config
 
 processed_folder_path = './processed'
 
-def process_csvs(csv_folder_path):
-    print('Enter output file name (without file ending)')
-    processed_file_name = input('>>> ')
-    if processed_file_name == '':
-        processed_file_name = 'processed'
-
+def process_csvs(csv_folder_path, processed_file_name):
     df = combine_csvs(csv_folder_path)
     print('CSVs combined and timestamped.')
     df = df.drop('1213', axis=1)
@@ -131,4 +126,9 @@ if __name__ == '__main__':
         csv_folder_path = config.csv_folder_path
         print(f'.csv folder path loaded from config.py ({csv_folder_path})')
 
-    process_csvs(csv_folder_path)
+    print('Enter output file name (without file ending)')
+    processed_file_name = input('>>> ')
+    if processed_file_name == '':
+        processed_file_name = 'processed'
+
+    process_csvs(csv_folder_path, processed_file_name)

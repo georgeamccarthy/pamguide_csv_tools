@@ -47,7 +47,7 @@ df = pd.read_feather(path='mydata.feather')
 
 ### Save Pandas DataFrame to feather file
 
-This creates `df_as_feather.feather` in the local directory.
+This creates `mydata.feather` in the local directory.
 
 ```python
 df.reset_index().to_feather(path='mydata.feather')
