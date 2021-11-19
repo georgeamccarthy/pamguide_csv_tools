@@ -12,8 +12,8 @@ def process_csvs(csv_folder_path):
     if processed_file_name == '':
         processed_file_name = 'processed'
 
-    df = combine_csvs()
-    print('CSVs combined')
+    df = combine_csvs(csv_folder_path)
+    print('CSVs combined and timestamped.')
     df = df.drop('1213', axis=1)
     print('PAMGuide false time column dropped')
     df = inf_to_nans(df)
@@ -25,7 +25,11 @@ def process_csvs(csv_folder_path):
 
     print(f'Processed dave saved as binary feather file {processed_folder_path}')
 
-def combine_csvs():
+def combine_csvs(csv_folder_path):
+    '''
+    Combines CSVs and timestamps them.
+    '''
+
     csv_paths = []
     csv_names = []
     for root, dirs, files in os.walk(csv_folder_path):
@@ -35,6 +39,7 @@ def combine_csvs():
                 csv_paths.append(os.path.join(root, file))
 
     csv_paths.sort()
+    print(f'{len(csv_paths)} CSVs loaded.')
 
     # Timestamp each row on the column by the starting timestamp in the file name
     # + 0.5 seconds each row.
@@ -76,6 +81,9 @@ def remove_nans(df):
     # Equivalent but slower.
 
 def remove_nans_old(df):
+    '''
+    Depreciated nan remover (slower).
+    '''
     #identify all the rows in dataframe where there are nan (infinite values)
     rows = df.index[np.isnan(df).any(1)]     
 
