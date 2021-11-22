@@ -15,52 +15,67 @@ def process_csvs(csv_folder_path, processed_file_name):
     df = remove_nans(df)
     print('Corrupt nan sections removed.')
 
+    if not os.path.exists(processed_folder_path):
+        os.makedirs(processed_folder_path)
+
     df.reset_index().to_feather(f'{processed_folder_path}/{processed_file_name}.feather')
     print(df)
 
-    print(f'Processed dave saved as binary feather file {processed_folder_path}')
+    print(f'Processed data saved {processed_folder_path}/{processed_file_name}.feather')
+
+
+def get_csvs():
+    csv_names = []
+    csv_paths = []
 
 def combine_csvs(csv_folder_path):
     '''
     Combines CSVs and timestamps them.
     '''
-
     csv_paths = []
-    csv_names = []
-    for root, dirs, files in os.walk(csv_folder_path):
-        for file in files:
-            if file.endswith(".csv"):
-                csv_names.append(file)
-                csv_paths.append(os.path.join(root, file))
+    def traverse_dir(path):
+        for root, _, file_objects in os.walk(path):
+            for file_object in file_objects:
+                file_object_path = os.path.join(root, file_object)
+                
+                if file_object[-4:] == '.csv':
+                    csv_paths.append(file_object_path)
+                
+                elif os.path.isdir(file_object_path):
+                    traverse_dir(file_object_path)
 
+    traverse_dir(csv_folder_path)
     csv_paths.sort()
+
     print(f'{len(csv_paths)} CSVs loaded.')
 
     # Timestamp each row on the column by the starting timestamp in the file name
     # + 0.5 seconds each row.
 
+    print('Timestamping.')
     df_from_each_csv = (pd.read_csv(f) for f in csv_paths)
     timestamps = np.empty(0)
     for i, df in enumerate(df_from_each_csv):
-        time_str = csv_names[i][15:34]
-        year = int(time_str[:4])
-        month = int(time_str[4:6])
-        day = int(time_str[6:8])
-        hour = int(time_str[9:11])
-        minute = int(time_str[11:13])
-        second = int(time_str[13:15])
-        millisecond = int(time_str[16:19])
-        datetime_object = datetime.datetime(year, month, day, hour, minute, second, microsecond=millisecond*1000)
+        csv_name = csv_paths[i].rsplit('/', 1)[-1]
+        time_str = csv_name[15:34]
+
+        datetime_object = datetime.datetime(
+                year=int(time_str[:4]),
+                month=int(time_str[4:6]),
+                day=int(time_str[6:8]),
+                hour=int(time_str[9:11]),
+                minute=int(time_str[11:13]),
+                second=int(time_str[13:15]),
+                microsecond=int(time_str[16:19])*1000,
+        )
 
         timestamps = np.concatenate((timestamps, datetime_object + np.arange(len(df)) * datetime.timedelta(seconds=0.5)))
 
+    print('Concatenating.')
     df_from_each_csv = (pd.read_csv(f) for f in csv_paths)
     concatenated_df = pd.concat(df_from_each_csv)
 
     concatenated_df['timestamp'] = timestamps
-
-    if not os.path.exists(processed_folder_path):
-        os.makedirs(processed_folder_path)
 
     return concatenated_df
 
