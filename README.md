@@ -50,5 +50,5 @@ df = pd.read_feather(path='mydata.feather')
 This creates `mydata.feather` in the local directory.
 
 ```python
-df.reset_index().to_feather(path='mydata.feather')
+df.to_feather(path='mydata.feather')
 ```
