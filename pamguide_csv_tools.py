@@ -4,61 +4,53 @@ import datetime
 import numpy as np
 import config
 
-processed_folder_path = './processed'
 
-def process_csvs(csv_folder_path, processed_file_name):
-    df = combine_csvs(csv_folder_path)
-    print('CSVs combined and timestamped.')
-    df = df.drop('1213', axis=1)
-    print('PAMGuide false time column dropped')
-    df = inf_to_nans(df)
-    df = remove_nans(df)
-    print('Corrupt nan sections removed.')
+def process_csvs(csv_folder_path, processed_file_name, processed_folder_path='./processed'):
+    processed_path = f'{processed_folder_path}/{processed_file_name}'
 
     if not os.path.exists(processed_folder_path):
         os.makedirs(processed_folder_path)
 
-    df.reset_index().to_feather(f'{processed_folder_path}/{processed_file_name}.feather')
-    print(df)
-
-    print(f'Processed data saved {processed_folder_path}/{processed_file_name}.feather')
-
-
-def get_csvs():
+    files = os.listdir(csv_folder_path)
     csv_names = []
-    csv_paths = []
+    for file_name in files:
+        if file_name[-4:] == '.csv':
+            csv_names.append(file_name)
 
-def combine_csvs(csv_folder_path):
-    '''
-    Combines CSVs and timestamps them.
-    '''
-    csv_paths = []
-    def traverse_dir(path):
-        for root, _, file_objects in os.walk(path):
-            for file_object in file_objects:
-                file_object_path = os.path.join(root, file_object)
-                
-                if file_object[-4:] == '.csv':
-                    csv_paths.append(file_object_path)
-                
-                elif os.path.isdir(file_object_path):
-                    traverse_dir(file_object_path)
+    first_batch = True
+    to_process = len(csv_names)
+    for i, csv_name in enumerate(csv_names):
+        df = pd.read_csv(f'{csv_folder_path}/{file_name}')
+        df.drop(columns=['1213'], inplace=True)
 
-    traverse_dir(csv_folder_path)
-    csv_paths.sort()
+        df = timestamp(df, csv_name)
+        #print('CSVs combined and timestamped.')
+        #print('PAMGuide false time column dropped')
+        df = inf_to_nans(df)
+        df = remove_nans(df)
+        #print('Corrupt nan sections removed.')
 
-    print(f'{len(csv_paths)} CSVs loaded.')
+        to_process = to_process-1
 
-    # Timestamp each row on the column by the starting timestamp in the file name
-    # + 0.5 seconds each row.
+        if to_process % 1000 == 0:
 
-    print('Timestamping.')
-    df_from_each_csv = (pd.read_csv(f) for f in csv_paths)
-    timestamps = np.empty(0)
-    for i, df in enumerate(df_from_each_csv):
-        csv_name = csv_paths[i].rsplit('/', 1)[-1]
-        time_str = csv_name[15:34]
+            print(f'{(i+1)/len(csv_names)*100:.0f}%')
 
+            if first_batch:
+                first_batch = False
+                concat_df = df
+            else:
+                concat_df = pd.read_feather(path=processed_path)
+                concat_df = pd.concat([concat_df, df])
+
+            concat_df.reset_index(drop=True, inplace=True)
+            concat_df.to_feather(path=processed_path)
+            #print(f'Processed data saved {processed_folder_path}/{processed_file_name}.feather')
+            
+
+def timestamp(df, csv_name):
+    time_str = csv_name[15:34]
+    try:
         datetime_object = datetime.datetime(
                 year=int(time_str[:4]),
                 month=int(time_str[4:6]),
@@ -69,15 +61,14 @@ def combine_csvs(csv_folder_path):
                 microsecond=int(time_str[16:19])*1000,
         )
 
-        timestamps = np.concatenate((timestamps, datetime_object + np.arange(len(df)) * datetime.timedelta(seconds=0.5)))
+        timestamps = (np.arange(len(df)) * datetime.timedelta(seconds=0.5))
+        timestamps = timestamps + datetime_object
+    except:
+        timestamps = np.empty(len(df))
 
-    print('Concatenating.')
-    df_from_each_csv = (pd.read_csv(f) for f in csv_paths)
-    concatenated_df = pd.concat(df_from_each_csv)
+    df['timestamp'] = timestamps
 
-    concatenated_df['timestamp'] = timestamps
-
-    return concatenated_df
+    return df
 
 
 def remove_nans(df):
@@ -90,48 +81,10 @@ def remove_nans(df):
 
     # Equivalent but slower.
 
-def remove_nans_old(df):
-    '''
-    Depreciated nan remover (slower).
-    '''
-    #identify all the rows in dataframe where there are nan (infinite values)
-    rows = df.index[np.isnan(df).any(1)]     
-
-    #create an empty list to store dodgy rows which are either 1 second before or after a period when the hydrophone stopped (missing data)
-    dodge_rows = []
-
-    #loop through the rows where there are missing data and find times when hydrophone stopped/started recording 
-    for i in range (0, len(rows)-1): 
-        #print(rows[i])
-
-        #point where the hydrophone stopped  recording 
-        if (rows[i+1]-rows[i] != 1): 
-            if (rows[i]+2) not in dodge_rows: 
-                dodge_rows.append(rows[i]+2)
-            if (rows[i]+1) not in dodge_rows:  
-                dodge_rows.append(rows[i]+1)
-
-        #point where hydrophone restarted recording 
-        if (rows[i]-rows[i-1]) != 1:
-            if (rows[i]-2) not in dodge_rows: 
-                dodge_rows.append(rows[i]-2)
-            if (rows[i]-1) not in dodge_rows: 
-                dodge_rows.append(rows[i]-1)
-
-    #include the dodgy values 1 second after the last period of missing data, not included in above range
-    dodge_rows.append(rows[len(rows)-1]+1)
-    dodge_rows.append(rows[len(rows)-1]+2)
-
-    #new dataframe does not include data points before or after a period of missing hydrophone data or any missing data (nan) values
-    for i in range(0, len(dodge_rows)): 
-        df = df.drop(dodge_rows[i])
-
-    #remove nan values 
-    df.dropna(inplace=True)
-    return df
 
 def inf_to_nans(df):
     return df.replace([np.inf, -np.inf], np.nan)
+
 
 if __name__ == '__main__':
     if config.csv_folder_path == '':
@@ -147,3 +100,4 @@ if __name__ == '__main__':
         processed_file_name = 'processed'
 
     process_csvs(csv_folder_path, processed_file_name)
+    
