@@ -33,15 +33,16 @@ def process_csvs(csv_folder_path, processed_file_name, processed_folder_path='./
 
         if i == 0:
             concat_df = df
+            concat_df.to_feather(path=processed_path)
         else:
             concat_df = pd.concat([concat_df, df])
 
-        if to_process % 1000 == 0:
-            print(f'{(i+1)/len(csv_names)*100:.0f}%')
-            saved_df = pd.read_feather(path=processed_path)
-            concat_df = pd.concat([saved_df, concat_df])
-            concat_df.reset_index(drop=True, inplace=True)
-            concat_df.to_feather(path=processed_path)
+            if to_process % 100 == 0:
+                print(f'{(i+1)/len(csv_names)*100:.0f}%')
+                saved_df = pd.read_feather(path=processed_path)
+                concat_df = pd.concat([saved_df, concat_df])
+                concat_df.reset_index(drop=True, inplace=True)
+                concat_df.to_feather(path=processed_path)
             
 
 def timestamp(df, csv_name):
