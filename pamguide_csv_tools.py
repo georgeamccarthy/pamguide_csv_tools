@@ -17,7 +17,6 @@ def process_csvs(csv_folder_path, processed_file_name, processed_folder_path='./
         if file_name[-4:] == '.csv':
             csv_names.append(file_name)
 
-    first_batch = True
     to_process = len(csv_names)
     for i, csv_name in enumerate(csv_names):
         df = pd.read_csv(f'{csv_folder_path}/{file_name}')
@@ -32,20 +31,17 @@ def process_csvs(csv_folder_path, processed_file_name, processed_folder_path='./
 
         to_process = to_process-1
 
+        if i == 0:
+            concat_df = df
+        else:
+            concat_df = pd.concat([concat_df, df])
+
         if to_process % 1000 == 0:
-
             print(f'{(i+1)/len(csv_names)*100:.0f}%')
-
-            if first_batch:
-                first_batch = False
-                concat_df = df
-            else:
-                concat_df = pd.read_feather(path=processed_path)
-                concat_df = pd.concat([concat_df, df])
-
+            saved_df = pd.read_feather(path=processed_path)
+            concat_df = pd.concat([saved_df, concat_df])
             concat_df.reset_index(drop=True, inplace=True)
             concat_df.to_feather(path=processed_path)
-            #print(f'Processed data saved {processed_folder_path}/{processed_file_name}.feather')
             
 
 def timestamp(df, csv_name):
